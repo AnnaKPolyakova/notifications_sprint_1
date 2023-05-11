@@ -44,4 +44,5 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: "Python application: ${{ github.workflow }} успешно выполнен !"
+          message: "{{ github.repository }}: ${{ github.workflow }} успешно 
+          выполнен !"
