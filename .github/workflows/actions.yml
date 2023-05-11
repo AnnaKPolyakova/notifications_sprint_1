@@ -34,10 +34,10 @@ jobs:
       run: |
          mypy .
 
-  send_message:
+  send_successfully_message:
     runs-on: ubuntu-latest
     needs: checks
-    if: always()
+    if: success()
     steps:
       - name: Get current commit hash
         run: echo "::set-output name=commit_hash::$(git rev-parse HEAD)"
@@ -47,12 +47,25 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: "${{ github.repository }} 
-          ${{ github.github_sha }} 
-          ${{ github.github_workflow_sha }} 
-          ${{ github.commit.hash }}: ${{ github.workflow }} 
-          Commit: ${{ steps.get_commit_hash.outputs.commit_hash }}
+          message: "
+          ${{ github.repository }}: 
+          Pipeline for ${{ github.event.pull_request.head.sha }} 
+          finished successfully!"
 
-          Status: ${{ github.workflow.status }}
-          успешно 
-          выполнен !"
+  send_unsuccessfully_message:
+    runs-on: ubuntu-latest
+    needs: checks
+    if: failure()
+    steps:
+      - name: Get current commit hash
+        run: echo "::set-output name=commit_hash::$(git rev-parse HEAD)"
+        id: get_commit_hash
+      - name: send message
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: "
+          ${{ github.repository }}: 
+          Pipeline for ${{ github.event.pull_request.head.sha }} 
+          finished with error!"
