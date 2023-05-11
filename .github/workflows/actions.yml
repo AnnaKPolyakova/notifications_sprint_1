@@ -39,6 +39,9 @@ jobs:
     needs: checks
     if: always()
     steps:
+      - name: Get current commit hash
+        run: echo "::set-output name=commit_hash::$(git rev-parse HEAD)"
+        id: get_commit_hash
       - name: send message
         uses: appleboy/telegram-action@master
         with:
@@ -48,7 +51,7 @@ jobs:
           ${{ github.github_sha }} 
           ${{ github.github_workflow_sha }} 
           ${{ github.commit.hash }}: ${{ github.workflow }} 
-                Commit: ${{ steps.get_commit_hash.outputs.commit_hash }}
+          Commit: ${{ steps.get_commit_hash.outputs.commit_hash }}
 
           Status: ${{ job.status }}
           успешно 
