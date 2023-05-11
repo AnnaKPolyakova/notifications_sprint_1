@@ -39,6 +39,7 @@ jobs:
     needs: checks
     steps:
       - name: send message
+        if: always()
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
