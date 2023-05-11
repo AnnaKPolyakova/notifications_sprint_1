@@ -53,6 +53,6 @@ jobs:
           ${{ github.commit.hash }}: ${{ github.workflow }} 
           Commit: ${{ steps.get_commit_hash.outputs.commit_hash }}
 
-          Status: ${{ job.checks.status }}
+          Status: ${{ jobs.checks.status }}
           успешно 
           выполнен !"
