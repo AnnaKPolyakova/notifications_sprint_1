@@ -45,6 +45,7 @@ jobs:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: "${{ github.repository }} 
-          ${{ github.ref }} ${{ github.commit }}: ${{ github.workflow }} 
+          ${{ github.project.name }} 
+          ${{ github.commit.hash }}: ${{ github.workflow }} 
           успешно 
           выполнен !"
