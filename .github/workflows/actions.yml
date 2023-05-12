@@ -41,6 +41,14 @@ jobs:
       run: |
          mypy .
 
+    - name: send message
+      uses: appleboy/telegram-action@master
+      if: always()
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        message: "_____________________________________________________________"
+
     - name: send error message
       uses: appleboy/telegram-action@master
       if: failure()
