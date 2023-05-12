@@ -41,16 +41,14 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: "
-          ${{ GITHUB_ACTION_STARTED_AT }}
           Project: ${{ github.repository }}\n
           Author: ${{ github.actor }}\n
           Commit: ${{ github.sha }}\n
-          
           Pipeline finished with error.\n
-          
           Tested with Python ${{ matrix.python-version }}\n
           Steps details - ${{ toJson(steps) }}\n
-          ${{ job.status }}
+          Steps details - ${{ toJson(jobs) }}\n
+          ${{ jobs.status }}
         "
 
 #  send_successfully_message:
