@@ -41,7 +41,7 @@ jobs:
       run: |
          mypy .
 
-    - name: send message
+    - name: send error message
       uses: appleboy/telegram-action@master
       if: failure()
       with:
@@ -50,44 +50,30 @@ jobs:
         message: "
           Project: ${{ github.repository }}
           
-          Author: ${{ github.actor }}\n
-          Commit: ${{ github.sha }}\n
-          Pipeline finished with error.\n
-          Python ${{ matrix.python-version }}\n
-          Steps details - ${{ toJson(steps) }}\n
+          Author: ${{ github.actor }}
+          
+          Commit: ${{ github.sha }}
+          
+          Python ${{ matrix.python-version }}
+          
+          Pipeline finished with error.
+          
+          Steps details - ${{ toJson(steps) }}
         "
+    - name: send success message
+      uses: appleboy/telegram-action@master
+      if: success()
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        message: "
+          Project: ${{ github.repository }}
 
-#  send_successfully_message:
-#    runs-on: ubuntu-latest
-#    needs: checks
-#    if: success()
-#    steps:
-#      - name: send message
-#        uses: appleboy/telegram-action@master
-#        with:
-#          to: ${{ secrets.TELEGRAM_TO }}
-#          token: ${{ secrets.TELEGRAM_TOKEN }}
-#          message: "
-#          ${{ github.repository }}:
-#          Pipeline for ${{ github.sha }}
-#          finished successfully!"
-#
-#  send_unsuccessfully_message:
-#    runs-on: ubuntu-latest
-#    needs: checks
-#    if: failure()
-#    steps:
-#      - name: send message
-#        uses: appleboy/telegram-action@master
-#        with:
-#          to: ${{ secrets.TELEGRAM_TO }}
-#          token: ${{ secrets.TELEGRAM_TOKEN }}
-#          message: "
-#          Project: ${{ github.repository }}\n
-#          Author: ${{ github.actor }}\n
-#          Commit: ${{ github.sha }}\n
-#
-#          Pipeline finished with error.\n
-#
-#          ${{ job.status }}
-#          "
+          Author: ${{ github.actor }}
+
+          Commit: ${{ github.sha }}
+
+          Python ${{ matrix.python-version }}
+          
+          Pipeline finished successfully.
+        "
