@@ -41,8 +41,7 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: "
-          ${{ github.run_number }}
-          ${{ github.run_started_at }}\n
+          ${{ GITHUB_ACTION_STARTED_AT }}
           Project: ${{ github.repository }}\n
           Author: ${{ github.actor }}\n
           Commit: ${{ github.sha }}\n
