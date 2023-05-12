@@ -47,7 +47,7 @@ jobs:
           Pipeline finished with error.\n
           Tested with Python ${{ matrix.python-version }}\n
           Steps details - ${{ toJson(steps) }}\n
-          Steps details - ${{ jobs }}\n
+          ${{ job.status }}
         "
 
 #  send_successfully_message:
