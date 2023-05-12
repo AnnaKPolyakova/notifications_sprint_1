@@ -51,7 +51,7 @@ jobs:
           Commit: ${{ github.sha }}\n
           Pipeline finished with error.\n
           Tested with Python ${{ matrix.python-version }}\n
-          Steps details - ${{ toJson(steps) }}\n
+          Steps details - ${{ steps }}\n
           ${{ job.status }}
         "
 
