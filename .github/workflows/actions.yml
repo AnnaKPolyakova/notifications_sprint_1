@@ -21,6 +21,7 @@ jobs:
         python-version:  ${{ matrix.python-version }}
 
     - name: Install dependencies
+      id: dependencies
       if: always()
       run: |
         python -m pip install --upgrade pip
@@ -29,6 +30,7 @@ jobs:
         echo "Install dependencies" >> $GITHUB_OUTPUT
 
     - name: Lint with flake8
+      id: flake8
       if: always()
       run: |
         flake8 . --format=html --htmldir output
@@ -36,6 +38,7 @@ jobs:
 
 
     - name: mypy
+      id: mypy
       if: always()
       run: |
          mypy .
@@ -49,6 +52,7 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: "
+          \n
           Project: ${{ github.repository }}\n
           Author: ${{ github.actor }}\n
           Commit: ${{ github.sha }}\n
