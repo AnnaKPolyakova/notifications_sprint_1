@@ -66,8 +66,13 @@ jobs:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: "
-          Project: ${{ github.repository }} \n
-          Author: ${{ github.actor }}
-          Commit: ${{ github.sha }} <br>
-          Pipeline finished with error.
+          Project: ${{ github.repository }}\n
+          
+          Author: ${{ github.actor }}\n
+          
+          Commit: ${{ github.sha }}\n
+          
+          Pipeline finished with error.\n
+          
+          Steps details - ${{ toJson(steps) }}
           "
