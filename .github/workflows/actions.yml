@@ -48,12 +48,12 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: "
-          \n
-          Project: ${{ github.repository }}\n
+          Project: ${{ github.repository }}
+          
           Author: ${{ github.actor }}\n
           Commit: ${{ github.sha }}\n
           Pipeline finished with error.\n
-          Tested with Python ${{ matrix.python-version }}\n
+          Python ${{ matrix.python-version }}\n
           Steps details - ${{ toJson(steps) }}\n
         "
 
