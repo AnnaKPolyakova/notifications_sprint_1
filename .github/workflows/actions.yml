@@ -25,14 +25,19 @@ jobs:
         python -m pip install --upgrade pip
         pip install wemake-python-styleguide flake8-html lxml mypy
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        echo "Install dependencies" >> $GITHUB_OUTPUT
 
     - name: Lint with flake8
       run: |
-         flake8 . --format=html --htmldir output
+        flake8 . --format=html --htmldir output
+        echo "Lint with flake8" >> $GITHUB_OUTPUT
+
 
     - name: mypy
       run: |
          mypy .
+         echo "mypy" >> $GITHUB_OUTPUT
+
 
     - name: send message
       uses: appleboy/telegram-action@master
