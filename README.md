@@ -9,3 +9,12 @@
 Для остановки контейнера:
 
 * `docker-compose down --rmi all --volumes`
+
+
+#### Запуск проекта частично в контейнерах docker
+
+* `docker-compose -f docker-compose-local.yml up --build`
+
+Для остановки контейнера:
+
+* `docker-compose -f docker-compose-local.yml down --rmi all --volumes`
