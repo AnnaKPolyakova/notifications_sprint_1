@@ -1,1 +1,6 @@
 /venv/
+/.env
+/.mypy_cache/
+/rabbitmq_data/
+.idea
+output

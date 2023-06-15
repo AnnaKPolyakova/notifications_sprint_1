@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.11.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    env_file:
+      - .env
+    volumes:
+      - ./rabbitmq_data/data:/var/lib/rabbitmq
+    networks:
+      - moves_network
+
+#  db:
+#    image: postgres:12.4
+#    container_name: db
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data/
+#      - ./db_sql_copy:/docker-entrypoint-initdb.d
+#    env_file:
+#      - ./.env
+#
+#    healthcheck:
+#      test: "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
+#      timeout: 2s
+#      retries: 30
+#
+#    ports:
+#      - 5432:5432
+#
+#    networks:
+#      - moves_network
+#
+#  redis:
+#    image: redis
+#    container_name: redis
+#    restart: always
+#    volumes:
+#      - ./storage/redis/data:/data
+#    ports:
+#      - 6379:6379
+#    depends_on:
+#      - db
+#    networks:
+#      - moves_network
+
+volumes:
+  postgres_data:
+
+
+networks:
+  moves_network:
+    name: moves_network
+    external: true
