@@ -1,0 +1,71 @@
+@startuml
+
+title Notification app
+
+left to right direction
+
+
+class AdminUser {
+  id: int
+  date_joined: datatime
+  is_active: bool
+  is_staff: bool
+  email: str
+  first_name: str
+  last_name: str
+  username: str
+  is_superuser: bool
+  last_login: datatime
+  password: str
+}
+
+class Notification {
+  id: uuid
+  created_at: datatime
+  updated_at: datatime
+  type: str
+  is_express: bool
+  author_id: int
+  title: str
+  text:str
+  content_id: uuid
+}
+
+class UsersNotification {
+  id: uuid
+  created_at: datatime
+  updated_at: datatime
+  user_id: uuid
+  notification_id: int
+  email: str
+  is_user_subscribed: str
+  is_sent_to_queue: bool
+}
+
+class NotificationFrequency {
+  id: uuid
+  created_at: datatime
+  updated_at: datatime
+  slug: str
+  frequency: int
+  users_ids: str
+  notification_id: int
+}
+
+class UsersUnsubscribe {
+  id: uuid
+  created_at: datatime
+  user_id: uuid
+}
+
+class User {
+  Пользователи сайта
+  (из Auth app)
+}
+
+AdminUser::id --> Notification::author_id
+Notification::id --> UsersNotification::notification_id
+User::id --> UsersNotification::user_id
+User::id --> UsersUnsubscribe::user_id
+
+@enduml

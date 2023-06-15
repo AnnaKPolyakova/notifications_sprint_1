@@ -16,18 +16,19 @@ include(
     "components/static_files.py",
     "components/rabbitmq.py",
     "components/logging.py",
+    "components/other.py",
+    "components/rest_framework.py",
+    "components/celery.py",
 )
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
-DEBUG = os.environ.get("DEBUG", False) == "True"
+DEBUG = int(os.environ.get("DEBUG", 0)) == 1
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS").split(' ')
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", '').split(' ')
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
-# LOCALE_PATHS = ["movies/locale"]
 
 if DEBUG:
     import socket  # only if you haven't already imported this

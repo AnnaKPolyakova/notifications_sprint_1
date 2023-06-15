@@ -1,35 +1,42 @@
-from django.contrib import admin
-from django.contrib.admin import register
+from django.contrib.admin import ModelAdmin, StackedInline, register
 from django.contrib.auth import get_user_model
-
-from admin_panel.models import Notification, UsersNotification, \
-    NotificationFrequency
+from admin_panel.models import (
+    Notification, NotificationFrequency, UsersNotification
+)
 
 User = get_user_model()
 
 
+class UsersNotificationInline(StackedInline):
+    model = UsersNotification
+    verbose_name_plural = "Уведомления пользователей"
+    fields = ("user_id", "notification", "is_user_subscribed")
+
+    def get_readonly_fields(self, request, obj):
+        if obj:
+            return "user_id", "is_user_subscribed", "is_sent_to_queue"
+        return "is_user_subscribed", "is_sent_to_queue"
+
+
 @register(Notification)
-class NotificationAdmin(admin.ModelAdmin):
+class NotificationAdmin(ModelAdmin):
 
-    list_display = ("type", "author", "text",)
-    list_filter = ("type", "author",)
+    list_display = ('id', "type", "author", "text")
+    list_filter = ("type", "author")
     readonly_fields = ("author",)
-
-    def save_model(self, request, obj, form, change):
-        if not change:
-            obj.author = request.user
-        super().save_model(request, obj, form, change)
+    inlines = (UsersNotificationInline,)
 
 
 @register(UsersNotification)
-class UsersNotificationAdmin(admin.ModelAdmin):
+class UsersNotificationAdmin(ModelAdmin):
 
-    list_display = ("user_id", "content_id", "notification_id",)
-    list_filter = ("user_id", "content_id", "notification_id",)
+    list_display = ("id", "user_id", "notification_id")
+    list_filter = ("user_id", "notification_id")
+    readonly_fields = ("email", "is_user_subscribed", "is_sent_to_queue")
 
 
 @register(NotificationFrequency)
-class NotificationFrequencyAdmin(admin.ModelAdmin):
+class NotificationFrequencyAdmin(ModelAdmin):
 
-    list_display = ("type", "frequency",)
-    list_filter = ("type", "frequency",)
+    list_display = ("slug", "frequency", "notification_id")
+    list_filter = ("slug", "frequency", "notification_id")

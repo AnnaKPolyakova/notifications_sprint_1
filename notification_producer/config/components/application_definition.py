@@ -6,8 +6,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "debug_toolbar",
+    "drf_spectacular",
     "admin_panel.apps.AdminPanelConfig",
-    "producer.apps.ProducerConfig",
 ]
 
 MIDDLEWARE = [

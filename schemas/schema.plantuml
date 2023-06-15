@@ -1,0 +1,36 @@
+@startuml
+
+actor Admin #violet
+actor User #violet
+actor Other #violet
+
+component Admin_panel as [Admin panel \n(nginx: 8000)\n\n(save new notifications\nand settings for it)] #lightblue
+component Cron as [Celery cron task] #lightblue
+component Notification_api as [Notification API \n(nginx: 8000)] #lightblue
+
+component Notification_producer as [Notification \nProducer\n\n(create UserNotifications)] #lightgreen
+component Auth_app as [Auth app \n(nginx: 8001)] #lightgreen
+component Notification_consumer as [Notification \nConsumer:\n\n- get users mail,\n- send notification] #lightgreen
+
+
+database RabbitMQ as [RabbitMQ: \n- express_queue\n- regular queue\n- dead letter queue] #orange
+database NotificationPostgresDB as [Postgres db \n \n(users, roles, \npermissions)] #orange
+
+'
+Admin -down-> Admin_panel: add new notification
+Admin -down-> Admin_panel: added settings (NotificationFrequency)
+Admin_panel -down-> NotificationPostgresDB: save data
+Notification_api -down-> Notification_producer: send notification
+Cron -down-> Notification_producer: send notification
+Admin_panel -down-> Notification_producer: send notification
+RabbitMQ <-down- Notification_consumer: put unsuccess notification \nto dead letter  queue
+Notification_producer -up-> RabbitMQ: save data
+Notification_producer -up-> NotificationPostgresDB: save data
+Notification_producer -down-> Auth_app: get users emails
+Notification_consumer -down-> NotificationPostgresDB: update data
+RabbitMQ -down-> Notification_consumer: get notification data
+User -down-> Notification_api:  request to \nunsubscribe/subscribe
+Other -down-> Notification_api:  request to \ncreate notifications
+Notification_api -down-> NotificationPostgresDB: save data
+Notification_consumer -down-> Auth_app: get users info (login, etc)
+@enduml
