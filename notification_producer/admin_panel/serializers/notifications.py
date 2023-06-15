@@ -11,6 +11,12 @@ class UsersNotificationSerializer(serializers.ModelSerializer):
         )
 
 
+class UsersNotificationDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UsersNotification
+        fields = '__all__'
+
+
 class NotificationSerializer(serializers.ModelSerializer):
 
     users = serializers.ListField(
