@@ -1,10 +1,10 @@
 # Проектная работа 10 спринта
 
-Командная работа https://github.com/AnnaKPolyakova/notifications_sprint_1
-Нал проектом рабботали:  https://github.com/AnnaKPolyakova/ (Анна Полякова)
+Командная работа https://github.com/AnnaKPolyakova/notifications_sprint_1  
+Над проектом работали:  https://github.com/AnnaKPolyakova/ (Анна Полякова)
 
 ## Описание работы проекта:
-[Схема бд](schemas%2Fnotification_models_schema.plantuml)
+[Схема бд](schemas%2Fnotification_models_schema.plantuml)  
 [Схема работы проекта](schemas%2Fschema.plantuml)
 
 #### Создание уведомлений:
