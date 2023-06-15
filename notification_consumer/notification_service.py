@@ -21,10 +21,10 @@ from notification_consumer.utils import (
 
 class NotificationService:
     def __init__(self, session, user_notification_id):
-        self.notification = None
+        self.notification: Notification = None
         self.session = session
         self.user_notification_id = user_notification_id
-        self.user_notification = None
+        self.user_notification: UsersNotification = None
         self.username = None
         self.from_email = '{login}@{domain}'.format(
             login=notification_consumer_settings.mail_login,

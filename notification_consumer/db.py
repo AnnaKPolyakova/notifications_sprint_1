@@ -16,13 +16,12 @@ engine = create_engine(
 class DatabaseManager:
     def __init__(self, engine_obj):
         self.engine = engine_obj
-        self.Session = None
         self.session = None
 
     def __enter__(self):
-        self.Session = sessionmaker(bind=self.engine)
-        self.session = self.Session()
+        self.session = sessionmaker(bind=self.engine)()
         return self.session
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.session.close()
+        if self.session:
+            self.session.close()
