@@ -29,6 +29,7 @@ ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", '').split(' ')
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+LOCALE_PATHS = ['notification_producer/admin_panel/locale']
 
 if DEBUG:
     import socket  # only if you haven't already imported this
