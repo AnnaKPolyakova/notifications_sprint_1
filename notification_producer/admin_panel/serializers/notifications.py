@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 
 class UsersNotificationSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = UsersNotification
         fields = (

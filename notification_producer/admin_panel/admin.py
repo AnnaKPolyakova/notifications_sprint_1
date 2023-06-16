@@ -1,7 +1,7 @@
 from django.contrib.admin import ModelAdmin, StackedInline, register
 from django.contrib.auth import get_user_model
 from admin_panel.models import (
-    Notification, NotificationFrequency, UsersNotification
+    Notification, NotificationFrequency, UsersNotification, Application
 )
 
 User = get_user_model()
@@ -40,3 +40,11 @@ class NotificationFrequencyAdmin(ModelAdmin):
 
     list_display = ("slug", "frequency", "notification_id")
     list_filter = ("slug", "frequency", "notification_id")
+
+
+@register(Application)
+class NotificationFrequencyAdmin(ModelAdmin):
+
+    list_display = ("slug", "password", "created_at")
+    list_filter = ("slug", "password", "created_at")
+

@@ -8,14 +8,18 @@ from admin_panel.views.unsubscribe import (
 )
 from django.urls import include, path
 
-router = DefaultRouter()
-router.register(
-    r"notifications", NotificationCreateAPI, basename="notifications"
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
 )
+
+router = DefaultRouter()
+# router.register(
+#     r"notifications", NotificationCreateAPI, basename="notifications"
+# )
 router.register(
     r"users_notifications", UsersNotificationAPI, basename="users_notifications"
 )
-
 
 
 project_urls = [
@@ -24,6 +28,11 @@ project_urls = [
 
 notifications_urls = [
     path("", include(router.urls)),
+    path(
+        "notifications/",
+        NotificationCreateAPI.as_view(),
+        name="notifications",
+    ),
     path(
         "unsubscribes/",
         UnsubscribeCreateAPI.as_view(),
@@ -36,6 +45,14 @@ notifications_urls = [
     ),
 ]
 
+
+user_token_urls = [
+    path('user_token/', TokenObtainPairView.as_view(),
+         name='token_obtain_pair'),
+    path('user_token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+]
+
 urlpatterns = [
     path("v1/", include(notifications_urls)),
+    path("v1/", include(user_token_urls)),
 ]

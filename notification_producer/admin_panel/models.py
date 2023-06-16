@@ -2,11 +2,15 @@ import asyncio
 import logging
 import time
 
+from django.contrib.auth.hashers import make_password
+
 from admin_panel.producer import save_notification_to_rabbitmq
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +45,8 @@ class Create(models.Model):
 
 class Notification(CreateUpdate):
     class Type(models.TextChoices):
-        MAIL = _("mail")
-        REGULAR_MAIL = _("regular_mail")
+        MAIL = "mail", _("mail")
+        REGULAR_MAIL = "regular_mail", _("regular_mail")
 
     type = models.CharField(
         choices=Type.choices,
@@ -225,3 +229,32 @@ class UsersUnsubscribe(Create):
 
     def __str__(self):
         return str(self.user_id)
+
+
+class Application(Create):
+
+    slug = models.SlugField(
+        verbose_name=_('slug'),
+        help_text=_('set slug'),
+        unique=True,
+    )
+    password = models.CharField(
+        max_length=128,
+        verbose_name=_('password'),
+        help_text=_('set password'),
+    )
+
+    def check_password(self, raw_password):
+        return make_password(raw_password, settings.SALT) == self.password
+
+    def save(self, *args, **kwargs):
+        self.password = make_password(self.password, settings.SALT)
+        super(Application, self).save(*args, **kwargs)
+
+    class Meta:
+        ordering = ["created_at"]
+        verbose_name = _('Application'),
+        verbose_name_plural = _('Applications'),
+
+    def __str__(self):
+        return str(self.slug)

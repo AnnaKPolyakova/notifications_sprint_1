@@ -1,3 +1,5 @@
+import os
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME":
@@ -17,3 +19,5 @@ AUTH_PASSWORD_VALIDATORS = [
                 "NumericPasswordValidator",
     },
 ]
+
+SALT = os.environ.get("SALT", 'salt')

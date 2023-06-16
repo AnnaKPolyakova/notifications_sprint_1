@@ -1,4 +1,5 @@
 from rest_framework.decorators import action
+from rest_framework.generics import CreateAPIView
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.viewsets import GenericViewSet
 
@@ -8,31 +9,31 @@ from admin_panel.serializers.notifications import (
     UsersNotificationSerializer,
     UsersNotificationDetailSerializer
 )
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
 
-from admin_panel.permissions import IsUserAuthenticated
+from admin_panel.permissions import IsUserAuthenticated, IsAppAuthenticated
 
 
 class NotificationCreateAPI(
-    CreateModelMixin, GenericViewSet
+    CreateAPIView
 ):
     serializer_class = NotificationSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAppAuthenticated,)
 
     def perform_create(self, serializer):
-        notification = serializer.save(author=self.request.user)
+        if self.request.user.is_anonymous is True:
+            notification = serializer.save()
+        else:
+            notification = serializer.save(author=self.request.user)
         users_ids = self.request.data["users"]
         data = [
             {"user_id": user_id, "notification": notification.id} for
             user_id in users_ids
         ]
-        serializer = UsersNotificationSerializer(
+        users_notification_serializer = UsersNotificationSerializer(
             data=data, many=True
         )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        users_notification_serializer.is_valid(raise_exception=True)
+        users_notification_serializer.save()
 
 
 class UsersNotificationAPI(
