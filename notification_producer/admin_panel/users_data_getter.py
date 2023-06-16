@@ -5,18 +5,30 @@ import aiohttp
 from config import settings
 from validate_email import validate_email
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('logger')
+
+
+def _is_valid_email(value):
+    return validate_email(value)
+
+
+def _is_valid_chat_id(value):
+    return isinstance(value, int)
 
 
 class UsersDataGetter:
-    def __init__(self, user_id):
+
+    VALUES_AND_CHECKS = {
+        "email": _is_valid_email,
+        "chat_id": _is_valid_chat_id,
+    }
+
+    def __init__(self, user_id, field):
         self.user_id = user_id
+        self.field = field
+        self.value = None
 
-    @staticmethod
-    def _is_valid_email(email):
-        return validate_email(email)
-
-    async def get_user_email(self):
+    async def get_user_data(self):
         for _ in range(settings.NUMBER_OF_TRIES_TO_GET_USERS):
             async with aiohttp.ClientSession() as session:
                 async with session.get(
@@ -34,9 +46,11 @@ class UsersDataGetter:
                         )
                         break
                     data = await response.json()
-                    mail = data.get('email', None)
-                    if (
-                            isinstance(mail, str) and
-                            self._is_valid_email(mail) is True
-                    ):
-                        return mail
+                    self.value = data.get(self.field, None)
+                    if self.value is None:
+                        return
+                    if self.VALUES_AND_CHECKS[self.field] is None:
+                        return self.value
+                    if self.VALUES_AND_CHECKS[self.field](self.value):
+                        return self.value
+                    return False

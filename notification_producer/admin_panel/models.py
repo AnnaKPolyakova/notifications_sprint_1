@@ -8,7 +8,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from config import settings
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('logger')
 
 User = get_user_model()
 
@@ -42,7 +42,12 @@ class Create(models.Model):
 class Notification(CreateUpdate):
     class Type(models.TextChoices):
         MAIL = "mail", _("mail")
-        REGULAR_MAIL = "regular_mail", _("regular_mail")
+        TELEGRAM = "telegram", _("telegram")
+
+    TYPES_AND_FIELDS = {
+        Type.MAIL: "email",
+        Type.TELEGRAM: "chat_id",
+    }
 
     type = models.CharField(
         choices=Type.choices,
@@ -105,11 +110,12 @@ class UsersNotification(CreateUpdate):
         verbose_name=_("notification"),
         help_text=_("set notification"),
     )
-    email = models.EmailField(
+    contact = models.CharField(
         null=True,
         blank=True,
-        verbose_name=_("Mail for sending notifications"),
-        help_text=_("Mail for sending notifications"),
+        max_length=100,
+        verbose_name=_("Contact for sending notifications"),
+        help_text=_("Contact for sending notifications"),
     )
     is_user_subscribed = models.BooleanField(
         default=True,
@@ -129,6 +135,12 @@ class UsersNotification(CreateUpdate):
             "sending"
         )
     )
+    is_correct_contacts = models.BooleanField(
+        default=True,
+        verbose_name=_(
+            "Field shows whether the contact details are correct"
+        )
+    )
 
     class Meta:
         ordering = ["created_at"]
@@ -143,14 +155,23 @@ class UsersNotification(CreateUpdate):
             if UsersUnsubscribe.objects.filter(user_id=self.user_id).exists:
                 self.is_user_unsubscribed = True
             from admin_panel.users_data_getter import UsersDataGetter
-            data_getter = UsersDataGetter(self.user_id)
-            self.email = asyncio.run(data_getter.get_user_email())
-            logger.info(
-                "End create_users_messages for {notification}".format(
-                    notification=self.id
-                )
+            data_getter = UsersDataGetter(
+                self.user_id,
+                Notification.TYPES_AND_FIELDS[self.notification.type]
             )
+            value = asyncio.run(
+                data_getter.get_user_data()
+            )
+            if value is not False and value is not None:
+                self.contact = value
+            elif value is False:
+                self.is_correct_contacts = False
         super(UsersNotification, self).save(*args, **kwargs)
+        logger.info(
+            "End create_users_messages for {notification}".format(
+                notification=self.id
+            )
+        )
 
 
 class NotificationFrequency(CreateUpdate):

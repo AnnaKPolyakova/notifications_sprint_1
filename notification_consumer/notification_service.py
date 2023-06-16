@@ -1,6 +1,7 @@
 import asyncio
 import os
 import smtplib
+from abc import ABC, abstractmethod
 from email.message import EmailMessage
 from http import HTTPStatus
 
@@ -19,12 +20,18 @@ from notification_consumer.utils import (
 )
 
 
-class NotificationService:
-    def __init__(self, session, user_notification_id):
-        self.notification: Notification = None
+class AbstractNotificationService(ABC):
+
+    @abstractmethod
+    async def send_messages(self):
+        pass
+
+
+class MailNotificationService(AbstractNotificationService):
+    def __init__(self, session, user_notification, notification):
+        self.notification: Notification = notification
         self.session = session
-        self.user_notification_id = user_notification_id
-        self.user_notification: UsersNotification = None
+        self.user_notification: UsersNotification = user_notification
         self.username = None
         self.from_email = '{login}@{domain}'.format(
             login=notification_consumer_settings.mail_login,
@@ -47,7 +54,7 @@ class NotificationService:
             )
         await save_notification_to_dead_letter_queue(
             {
-                'notification_id': self.user_notification_id,
+                'notification_id': self.user_notification.id,
                 'content_id': str(self.notification.content_id),
                 "dlq": str(True)
             }, dead_letter_queue
@@ -77,7 +84,7 @@ class NotificationService:
 
     def _prepare_message(self):
         self.message['From'] = self.from_email
-        self.message['To'] = [self.user_notification.email]
+        self.message['To'] = [self.user_notification.contact]
         self.message['Subject'] = self.notification.title
         # Указываем расположение шаблонов
         current_path = os.path.dirname(__file__)
@@ -105,7 +112,7 @@ class NotificationService:
             try:
                 self.server.sendmail(
                     self.from_email,
-                    [self.user_notification.email],
+                    [self.user_notification.contact],
                     self.message.as_string()
                 )
             except smtplib.SMTPException as exc:
@@ -129,39 +136,34 @@ class NotificationService:
             else:
                 consumer_logger.info(
                     'Letter sent to {mail}'.format(
-                        mail=self.user_notification.email
+                        mail=self.user_notification.contact
                     )
                 )
             finally:
                 self.server.close()
                 consumer_logger.info('Done')
 
-    async def sent_messages(self):
-        self.user_notification = self.session.get(
-            UsersNotification, self.user_notification_id
-        )
-        if self.user_notification is None:
-            consumer_logger.info('Users notification not exist')
-            return
-        if self.user_notification.email is None:
+    async def send_messages(self):
+        if self.user_notification.contact is None:
             consumer_logger.info(
                 'Can not get mail for user notification {notification}'.format(
-                    notification=self.user_notification_id
+                    notification=self.user_notification.id
                 )
             )
-            return
-        self.notification = self.session.get(
-            Notification, self.user_notification.notification_id
-        )
-        if self.notification is None:
-            consumer_logger.info('Notification not exist')
             return
         self.username = await self._get_user_info()
         self._prepare_message()
         await self._sent_messages_for_user()
 
 
+class TelegramNotificationService(AbstractNotificationService):
+
+    async def send_messages(self):
+        # TODO
+        pass
+
+
 if __name__ == "__main__":
     with DatabaseManager(engine) as session:
-        notificator = NotificationService(session, 13)
-        asyncio.run(notificator.sent_messages())
+        notificator = MailNotificationService(session, 13, 1)
+        asyncio.run(notificator.send_messages())

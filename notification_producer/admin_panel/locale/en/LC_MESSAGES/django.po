@@ -1622,7 +1622,7 @@ msgstr ""
 
 #: notification_producer/admin_panel/models.py:111
 #: notification_producer/admin_panel/models.py:112
-msgid "Mail for sending notifications"
+msgid "Contact for sending notifications"
 msgstr ""
 
 #: notification_producer/admin_panel/models.py:117
@@ -1682,4 +1682,7 @@ msgid "Application"
 msgstr ""
 
 msgid "Applications"
+msgstr ""
+
+msgid "Field shows whether the contact details are correct"
 msgstr ""

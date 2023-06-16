@@ -15,7 +15,7 @@ app.autodiscover_tasks(['schedule'])
 
 django.setup()
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('logger')
 
 
 def get_regular_tasks():

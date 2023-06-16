@@ -1624,8 +1624,8 @@ msgstr "установить уведомление"
 
 #: notification_producer/admin_panel/models.py:111
 #: notification_producer/admin_panel/models.py:112
-msgid "Mail for sending notifications"
-msgstr "Почта для отправки уведомлений"
+msgid "Contact for sending notifications"
+msgstr "Контакт для отправки уведомлений"
 
 #: notification_producer/admin_panel/models.py:117
 #: notification_producer/admin_panel/models.py:121
@@ -1685,3 +1685,6 @@ msgstr "Приложение"
 
 msgid "Applications"
 msgstr "Приложения"
+
+msgid "Field shows whether the contact details are correct"
+msgstr "Поле указывающее на корректность контактных данных"

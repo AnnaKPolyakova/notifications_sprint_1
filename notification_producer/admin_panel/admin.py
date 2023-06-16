@@ -32,7 +32,7 @@ class UsersNotificationAdmin(ModelAdmin):
 
     list_display = ("id", "user_id", "notification_id")
     list_filter = ("user_id", "notification_id")
-    readonly_fields = ("email", "is_user_subscribed", "is_sent_to_queue")
+    readonly_fields = ("contact", "is_user_subscribed", "is_sent_to_queue")
 
 
 @register(NotificationFrequency)
