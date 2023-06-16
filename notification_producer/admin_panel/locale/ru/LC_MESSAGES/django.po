@@ -1679,3 +1679,9 @@ msgstr "укажите пользователя"
 #: notification_producer/admin_panel/models.py:224
 msgid "Opting out of receiving user mailings"
 msgstr "Отказ от получения рассылок пользователей"
+
+msgid "Application"
+msgstr "Приложение"
+
+msgid "Applications"
+msgstr "Приложения"

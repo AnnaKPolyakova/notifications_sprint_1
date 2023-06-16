@@ -43,8 +43,7 @@ class NotificationFrequencyAdmin(ModelAdmin):
 
 
 @register(Application)
-class NotificationFrequencyAdmin(ModelAdmin):
+class ApplicationAdmin(ModelAdmin):
 
     list_display = ("slug", "password", "created_at")
     list_filter = ("slug", "password", "created_at")
-

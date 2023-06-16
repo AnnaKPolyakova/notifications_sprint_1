@@ -1,15 +1,11 @@
 import asyncio
 import logging
-import time
 
 from django.contrib.auth.hashers import make_password
-
-from admin_panel.producer import save_notification_to_rabbitmq
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -143,12 +139,9 @@ class UsersNotification(CreateUpdate):
         return str(self.user_id)
 
     def save(self, *args, **kwargs):
-        sent_to_queue = False
         if self.id is None:
-            sent_to_queue = True
             if UsersUnsubscribe.objects.filter(user_id=self.user_id).exists:
                 self.is_user_unsubscribed = True
-                super(UsersNotification, self).save(*args, **kwargs)
             from admin_panel.users_data_getter import UsersDataGetter
             data_getter = UsersDataGetter(self.user_id)
             self.email = asyncio.run(data_getter.get_user_email())
@@ -158,27 +151,6 @@ class UsersNotification(CreateUpdate):
                 )
             )
         super(UsersNotification, self).save(*args, **kwargs)
-        if sent_to_queue and self.email:
-            if self.notification.users_notifications.count() > 100:
-                time.sleep(0.1)
-            try:
-                asyncio.run(
-                    save_notification_to_rabbitmq(
-                        {
-                            'notification_id': self.id,
-                            'content_id': str(self.notification.content_id),
-                            'is_express': self.notification.is_express
-                        }
-                    )
-                )
-            except Exception as error:
-                self.is_sent_to_queue = False
-                super(UsersNotification, self).save(*args, **kwargs)
-                logger.error(
-                    'Did not sent notification to rabbitmq: {error}'.format(
-                        error=error
-                    )
-                )
 
 
 class NotificationFrequency(CreateUpdate):
@@ -224,8 +196,8 @@ class UsersUnsubscribe(Create):
 
     class Meta:
         ordering = ["created_at"]
-        verbose_name = _('Opting out of receiving user mailings'),
-        verbose_name_plural = _('Opting out of receiving user mailings'),
+        verbose_name = _('Opting out of receiving user mailings')
+        verbose_name_plural = _('Opting out of receiving user mailings')
 
     def __str__(self):
         return str(self.user_id)
@@ -253,8 +225,8 @@ class Application(Create):
 
     class Meta:
         ordering = ["created_at"]
-        verbose_name = _('Application'),
-        verbose_name_plural = _('Applications'),
+        verbose_name = _('Application')
+        verbose_name_plural = _('Applications')
 
     def __str__(self):
         return str(self.slug)

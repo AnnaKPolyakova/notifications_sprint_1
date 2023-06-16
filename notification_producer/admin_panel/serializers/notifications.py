@@ -3,6 +3,9 @@ from rest_framework import serializers
 
 
 class UsersNotificationSerializer(serializers.ModelSerializer):
+    notification = serializers.PrimaryKeyRelatedField(
+        queryset=Notification.objects.all()
+    )
 
     class Meta:
         model = UsersNotification
