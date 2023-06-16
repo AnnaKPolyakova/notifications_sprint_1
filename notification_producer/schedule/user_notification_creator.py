@@ -40,33 +40,38 @@ class UsersNotificationsCreator:
         logger.info('Start _create_users_notifications')
         users_notifications = []
         for user_id in self.users_ids:
+            is_correct_contacts = True
+            is_user_subscribed = True
             if UsersUnsubscribe.objects.filter(user_id=user_id).exists():
-                email = None
+                is_user_subscribed = False
+                contact = ''
             else:
-                data_getter = UsersDataGetter(user_id)
-                logger.info('Start get_user_email')
-                email = asyncio.run(data_getter.get_user_email())
-            logger.info('email: {email}'.format(email=email))
+                data_getter = UsersDataGetter(
+                    user_id, self.notification.TYPES_AND_FIELDS[
+                        self.notification.type
+                    ]
+                )
+                logger.info('Start get_user_contact')
+                contact = asyncio.run(data_getter.get_user_data())
+            logger.info('contact: {contact}'.format(contact=contact))
+            if contact is False:
+                is_correct_contacts = False
             try:
                 users_notifications.append(
                     UsersNotification(
                         user_id=user_id,
                         notification=self.notification,
-                        email=email,
-                        is_user_subscribed=True,
+                        contact=contact,
+                        is_user_subscribed=is_user_subscribed,
                         created_at=datetime.datetime.now(),
                         updated_at=datetime.datetime.now(),
+                        is_correct_contacts=is_correct_contacts
                     )
                 )
             except Exception as error:
                 logger.info('error: {e}'.format(e=error))
         self.users_notifications = UsersNotification.objects.bulk_create(
             users_notifications, 1000
-        )
-        logger.info(
-            'Created UsersNotification for {users_ids}'.format(
-                users_ids=self.users_ids
-            )
         )
 
     def _save_notification_to_rabbitmq(self):
@@ -77,9 +82,11 @@ class UsersNotificationsCreator:
         )
         for user_notification in self.users_notifications:
             if (
-                    user_notification.email and
-                    user_notification.is_user_subscribed
+                    user_notification.is_user_subscribed is False or
+                    user_notification.is_correct_contacts
             ):
+                continue
+            if user_notification.contact:
                 asyncio.run(
                     save_notification_to_rabbitmq(
                         {
