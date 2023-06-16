@@ -25,7 +25,7 @@ NOTIFICATION_TYPE_AND_NOTIFICATION_SERVICE = {
 }
 
 
-async def send_message(message: IncomingMessage):
+async def send_message(message: IncomingMessage) -> None:
     async with message.process():
         data = json.loads(message.body.decode('utf-8'))
         consumer_logger.info(
@@ -69,7 +69,7 @@ async def notification_consumers(channel) -> None:
         await queue.consume(send_message)
 
 
-async def get_consumer_count(queue_name):
+async def get_consumer_count(queue_name: str) -> int:
     api_url = (
         'http://{username}:{password}@{host}:{port}/api/'
         'queues/%2F/{queue_name}'.format(
@@ -92,7 +92,7 @@ async def get_consumer_count(queue_name):
                     return consumer_count
 
 
-async def get_num_consumers():
+async def get_num_consumers() -> int:
     express_notification_queue_consumers_count = await get_consumer_count(
         settings.rabbitmq_notification_queue
     )
@@ -107,7 +107,7 @@ async def get_num_consumers():
     )
 
 
-async def run_consumers():
+async def run_consumers() -> None:
     connection = await connect(
         "amqp://{user}:{password}@{host}/".format(
             user=settings.rabbitmq_default_user,

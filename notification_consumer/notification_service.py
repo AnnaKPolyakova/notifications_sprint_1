@@ -4,9 +4,11 @@ import smtplib
 from abc import ABC, abstractmethod
 from email.message import EmailMessage
 from http import HTTPStatus
+from typing import Union
 
 import aiohttp
 from jinja2 import Environment, FileSystemLoader
+from sqlalchemy.orm import sessionmaker
 
 from notification_consumer.db import DatabaseManager, engine
 from notification_consumer.models import Notification, UsersNotification
@@ -30,10 +32,10 @@ class AbstractNotificationService(ABC):
 class MailNotificationService(AbstractNotificationService):
     def __init__(self, session, user_notification, notification):
         self.notification: Notification = notification
-        self.session = session
+        self.session: sessionmaker = session
         self.user_notification: UsersNotification = user_notification
-        self.username = None
-        self.from_email = '{login}@{domain}'.format(
+        self.username: Union[str, None] = None
+        self.from_email: str = '{login}@{domain}'.format(
             login=notification_consumer_settings.mail_login,
             domain=notification_consumer_settings.smtp_domain
         )
@@ -41,7 +43,7 @@ class MailNotificationService(AbstractNotificationService):
             notification_consumer_settings.smtp_host,
             notification_consumer_settings.smtp_port
         )
-        self.message = EmailMessage()
+        self.message: EmailMessage = EmailMessage()
 
     async def _save_notification_to_dead_letter_queue(self):
         if self.notification.is_express is True:

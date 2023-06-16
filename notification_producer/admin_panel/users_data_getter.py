@@ -1,5 +1,7 @@
 import logging
+import uuid
 from http import HTTPStatus
+from typing import Union
 
 import aiohttp
 from config import settings
@@ -24,9 +26,9 @@ class UsersDataGetter:
     }
 
     def __init__(self, user_id, field):
-        self.user_id = user_id
-        self.field = field
-        self.value = None
+        self.user_id: uuid.UUID = user_id
+        self.field: str = field
+        self.value: Union[str, None] = None
 
     async def get_user_data(self):
         for _ in range(settings.NUMBER_OF_TRIES_TO_GET_USERS):
