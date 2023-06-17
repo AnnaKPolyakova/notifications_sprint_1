@@ -1,11 +1,13 @@
 import asyncio
 import time
 
-from admin_panel.models import NotificationFrequency, UsersNotification
+from admin_panel.models import NotificationFrequency, UsersNotification, \
+    Notification
 from admin_panel.producer import save_notification_to_rabbitmq
 from celery.utils.log import get_task_logger
 from schedule.celery_app import app
 from schedule.user_notification_creator import UsersNotificationsCreator
+from admin_panel.users_data_getter import UsersDataGetter
 
 logger = get_task_logger(__name__)
 
@@ -36,6 +38,19 @@ def save_missing_users_notifications_to_rabbitmq():
                 users_notification=users_notification
             )
         )
+        if users_notification.contact is None:
+            data_getter = UsersDataGetter(
+                users_notification.user_id,
+                Notification.TYPES_AND_FIELDS[
+                    users_notification.notification.type
+                ]
+            )
+            contact = asyncio.run(data_getter.get_user_data())
+            if contact is None:
+                return
+            logger.info("contact: {contact}".format(contact=contact))
+            users_notification.contact = contact
+            users_notification.save()
         try:
             asyncio.run(
                 save_notification_to_rabbitmq(

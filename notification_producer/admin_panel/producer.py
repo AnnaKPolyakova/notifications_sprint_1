@@ -5,7 +5,7 @@ import logging
 from aio_pika import DeliveryMode, Message, connect
 from config import settings
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('logger')
 
 
 async def save_notification_to_rabbitmq(info: dict) -> None:

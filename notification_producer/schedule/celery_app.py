@@ -15,10 +15,10 @@ app.autodiscover_tasks(['schedule'])
 
 django.setup()
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('logger')
 
 
-def get_regular_tasks():
+def get_regular_tasks() -> dict:
     tasks = {}
     from admin_panel.models import NotificationFrequency
     notifications = NotificationFrequency.objects.all()
@@ -39,7 +39,7 @@ def get_regular_tasks():
     return tasks
 
 
-def get_all_tasks():
+def get_all_tasks() -> dict:
     tasks = {
         'run_save_missing_users_notifications_to_rabbitmq_task': {
             "task":

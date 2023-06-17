@@ -5,7 +5,10 @@ import aiohttp
 from aio_pika import IncomingMessage, connect
 
 from notification_consumer.db import DatabaseManager, engine
-from notification_consumer.notification_service import NotificationService
+from notification_consumer.models import UsersNotification, Notification
+from notification_consumer.notification_service import (
+    MailNotificationService, TelegramNotificationService
+)
 from notification_consumer.settings import (
     notification_consumer_settings as settings
 )
@@ -16,17 +19,44 @@ QUEUES_AND_PRIORITIES = {
     settings.rabbitmq_notification_express_queue: 2
 }
 
+NOTIFICATION_TYPE_AND_NOTIFICATION_SERVICE = {
+    "mail": MailNotificationService,
+    "telegram": TelegramNotificationService
+}
 
-async def save_message(message: IncomingMessage):
+
+async def send_message(message: IncomingMessage) -> None:
     async with message.process():
         data = json.loads(message.body.decode('utf-8'))
         consumer_logger.info(
-            " [x] {key}: {data}".format(key=message.routing_key, data=data)
+            "[x] {key}: {data}".format(key=message.routing_key, data=data)
         )
         with DatabaseManager(engine) as session:
             notification_id = data.get('notification_id', None)
-            notificator = NotificationService(session, notification_id)
-            await notificator.sent_messages()
+            user_notification = session.get(
+                UsersNotification, notification_id
+            )
+            if user_notification is None:
+                consumer_logger.info(
+                    'User notification not exist {notification}'.format(
+                        notification=notification_id
+                    )
+                )
+                return
+            notification = session.get(
+                Notification, user_notification.notification_id
+            )
+            if notification is None:
+                consumer_logger.info(
+                    'Notification not exist {notification}'.format(
+                        notification=user_notification.notification.id
+                    )
+                )
+                return
+            notificator = NOTIFICATION_TYPE_AND_NOTIFICATION_SERVICE[
+                notification.type
+            ](session, user_notification, notification)
+            await notificator.send_messages()
 
 
 async def notification_consumers(channel) -> None:
@@ -36,10 +66,10 @@ async def notification_consumers(channel) -> None:
         # Объявите очереди
         queue = await channel.get_queue(queue_name)
         # Начните слушать очереди
-        await queue.consume(save_message)
+        await queue.consume(send_message)
 
 
-async def get_consumer_count(queue_name):
+async def get_consumer_count(queue_name: str) -> int:
     api_url = (
         'http://{username}:{password}@{host}:{port}/api/'
         'queues/%2F/{queue_name}'.format(
@@ -62,7 +92,7 @@ async def get_consumer_count(queue_name):
                     return consumer_count
 
 
-async def get_num_consumers():
+async def get_num_consumers() -> int:
     express_notification_queue_consumers_count = await get_consumer_count(
         settings.rabbitmq_notification_queue
     )
@@ -77,7 +107,7 @@ async def get_num_consumers():
     )
 
 
-async def run_consumers():
+async def run_consumers() -> None:
     connection = await connect(
         "amqp://{user}:{password}@{host}/".format(
             user=settings.rabbitmq_default_user,

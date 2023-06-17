@@ -3,12 +3,22 @@ from rest_framework import serializers
 
 
 class UsersNotificationSerializer(serializers.ModelSerializer):
+    notification = serializers.PrimaryKeyRelatedField(
+        queryset=Notification.objects.all()
+    )
+
     class Meta:
         model = UsersNotification
         fields = (
             "user_id",
             "notification",
         )
+
+
+class UsersNotificationDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UsersNotification
+        fields = '__all__'
 
 
 class NotificationSerializer(serializers.ModelSerializer):

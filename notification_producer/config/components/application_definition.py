@@ -7,6 +7,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "debug_toolbar",
     "drf_spectacular",
+    'rest_framework',
+    'rest_framework_simplejwt',
     "admin_panel.apps.AdminPanelConfig",
 ]
 

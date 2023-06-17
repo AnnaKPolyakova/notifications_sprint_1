@@ -1,22 +1,28 @@
 import asyncio
 import logging
-import time
 
-from admin_panel.producer import save_notification_to_rabbitmq
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from config import settings
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('logger')
 
 User = get_user_model()
 
 
 class CreateUpdate(models.Model):
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("created_at"),
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("updated_at"),
+    )
 
     class Meta:
         abstract = True
@@ -24,7 +30,10 @@ class CreateUpdate(models.Model):
 
 class Create(models.Model):
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("created_at"),
+    )
 
     class Meta:
         abstract = True
@@ -32,19 +41,24 @@ class Create(models.Model):
 
 class Notification(CreateUpdate):
     class Type(models.TextChoices):
-        MAIL = "mail", _("Почтовая рассылка")
-        REGULAR_MAIL = "regular_mail", _("Регулярная почтовая рассылка")
+        MAIL = "mail", _("mail")
+        TELEGRAM = "telegram", _("telegram")
+
+    TYPES_AND_FIELDS = {
+        Type.MAIL: "email",
+        Type.TELEGRAM: "chat_id",
+    }
 
     type = models.CharField(
         choices=Type.choices,
         max_length=40,
-        verbose_name="Тип уведомления",
-        help_text="Выберите тип уведомления",
+        verbose_name=_("notification_type"),
+        help_text=_("Select notification type"),
     )
     is_express = models.BooleanField(
         default=False,
-        verbose_name="Поле указывающее на срочность уведомления'",
-        help_text="Выберете, если надо уведомить всех срочно",
+        verbose_name=_("Field indicating the urgency of the notification"),
+        help_text=_("Choose if you need to notify everyone urgently"),
     )
 
     author = models.ForeignKey(
@@ -52,29 +66,29 @@ class Notification(CreateUpdate):
         on_delete=models.DO_NOTHING,
         null=True,
         blank=True,
-        verbose_name="Администратор создавший уведомление",
-        help_text="Администратор создавший уведомление",
+        verbose_name=_("The administrator who created the notification"),
+        help_text=_("The administrator who created the notification"),
     )
     text = models.TextField(
         max_length=400,
-        verbose_name="Текст уведомление",
-        help_text="Текст уведомления",
+        verbose_name=_("Text notification"),
+        help_text=_("Text notification"),
     )
     title = models.CharField(
         max_length=100,
-        verbose_name="Заголовок уведомление",
-        help_text="Заголовок уведомления",
+        verbose_name=_("Notice title"),
+        help_text=_("Notice title"),
     )
     content_id = models.UUIDField(
         null=True,
-        verbose_name="Контент",
-        help_text="Укажите id контента",
+        verbose_name=_("content id"),
+        help_text=_("set content id"),
     )
 
     class Meta:
         ordering = ["created_at"]
-        verbose_name = "Уведомление"
-        verbose_name_plural = "Уведомления"
+        verbose_name = _("notification")
+        verbose_name_plural = _("notifications")
 
     def __str__(self):
         return "{id}, {title}, {type}".format(
@@ -86,107 +100,107 @@ class UsersNotification(CreateUpdate):
 
     user_id = models.UUIDField(
         null=True,
-        verbose_name="Пользователь",
-        help_text="Укажите id пользователя",
+        verbose_name=_("user id"),
+        help_text=_("set user id"),
     )
     notification = models.ForeignKey(
         Notification,
         related_name='users_notifications',
         on_delete=models.DO_NOTHING,
-        verbose_name="Уведомление",
-        help_text="Укажите id уведомления",
+        verbose_name=_("notification"),
+        help_text=_("set notification"),
     )
-    email = models.EmailField(
+    contact = models.CharField(
         null=True,
         blank=True,
-        verbose_name="Почта на которую было направлено уведомление",
-        help_text="Почта на которую было направлено уведомление",
+        max_length=100,
+        verbose_name=_("Contact for sending notifications"),
+        help_text=_("Contact for sending notifications"),
     )
     is_user_subscribed = models.BooleanField(
         default=True,
-        verbose_name="Поле указывающее согласен ли на рассылку пользователь",
-        help_text="Поле указывающее согласен ли на рассылку пользователь",
+        verbose_name=_(
+            "A field indicating whether the user is "
+            "subscribed to the mailing list"
+        ),
+        help_text=_(
+            "A field indicating whether the user is "
+            "subscribed to the mailing list"
+        ),
     )
     is_sent_to_queue = models.BooleanField(
         default=True,
-        verbose_name="Поле указывающее поставлено ли сообщение в очередь на "
-                     "отправку",
+        verbose_name=_(
+            "A field indicating whether the notifications is queued for "
+            "sending"
+        )
+    )
+    is_correct_contacts = models.BooleanField(
+        default=True,
+        verbose_name=_(
+            "Field shows whether the contact details are correct"
+        )
     )
 
     class Meta:
         ordering = ["created_at"]
-        verbose_name = "Уведомление пользователя"
-        verbose_name_plural = "Уведомления пользователей"
+        verbose_name = _("users notification")
+        verbose_name_plural = _("users notifications")
 
     def __str__(self):
         return str(self.user_id)
 
     def save(self, *args, **kwargs):
-        sent_to_queue = False
         if self.id is None:
-            sent_to_queue = True
             if UsersUnsubscribe.objects.filter(user_id=self.user_id).exists:
                 self.is_user_unsubscribed = True
-                super(UsersNotification, self).save(*args, **kwargs)
             from admin_panel.users_data_getter import UsersDataGetter
-            data_getter = UsersDataGetter(self.user_id)
-            self.email = asyncio.run(data_getter.get_user_email())
-            logger.info(
-                "End create_users_messages for {notification}".format(
-                    notification=self.id
-                )
+            data_getter = UsersDataGetter(
+                self.user_id,
+                Notification.TYPES_AND_FIELDS[self.notification.type]
             )
+            value = asyncio.run(
+                data_getter.get_user_data()
+            )
+            if value is not False and value is not None:
+                self.contact = value
+            elif value is False:
+                self.is_correct_contacts = False
         super(UsersNotification, self).save(*args, **kwargs)
-        if sent_to_queue and self.email:
-            if self.notification.users_notifications.count() > 100:
-                time.sleep(0.1)
-            try:
-                asyncio.run(
-                    save_notification_to_rabbitmq(
-                        {
-                            'notification_id': self.id,
-                            'content_id': str(self.notification.content_id),
-                            'is_express': self.notification.is_express
-                        }
-                    )
-                )
-            except Exception as error:
-                self.is_sent_to_queue = False
-                super(UsersNotification, self).save(*args, **kwargs)
-                logger.error(
-                    'Did not sent notification to rabbitmq: {error}'.format(
-                        error=error
-                    )
-                )
+        logger.info(
+            "End create_users_messages for {notification}".format(
+                notification=self.id
+            )
+        )
 
 
 class NotificationFrequency(CreateUpdate):
     slug = models.SlugField(
         max_length=40,
-        verbose_name="Уникальное название уведомления",
-        help_text="Уникальное название уведомления",
+        verbose_name=_("Unique notification title"),
+        help_text=_("Unique notification title"),
     )
     frequency = models.PositiveIntegerField(
         validators=[MinValueValidator(1)],
-        verbose_name="Периодичность отправки уведомления в секундах",
-        help_text="Периодичность отправки уведомления в секундах",
+        verbose_name=_("Notification frequency in seconds"),
+        help_text=_("Notification frequency in seconds"),
     )
     users_ids = models.TextField(
-        verbose_name="Список uuid пользователей для отправки уведомлений",
-        help_text="Список uuid пользователей для отправки уведомлений",
+        verbose_name=_("List of uuid users to send notifications"),
+        help_text=_("List of uuid users to send notifications"),
     )
     notification = models.ForeignKey(
         Notification,
         related_name='frequency',
         on_delete=models.DO_NOTHING,
-        verbose_name="Уведомление",
-        help_text="Укажите id уведомления",
+        verbose_name=_("notification"),
+        help_text=_("set notification"),
     )
 
     class Meta:
         ordering = ["created_at"]
-        verbose_name = "Периодичность уведомлений"
-        verbose_name_plural = "Периодичности уведомлений"
+        verbose_name = _("notification frequency")
+        verbose_name_plural = _("notifications frequencies")
 
     def __str__(self):
         return self.slug
@@ -196,15 +210,44 @@ class UsersUnsubscribe(Create):
 
     user_id = models.UUIDField(
         null=True,
-        verbose_name="Пользователь",
-        help_text="Укажите id пользователя",
+        verbose_name=_('user'),
+        help_text=_('set user'),
         unique=True,
     )
 
     class Meta:
         ordering = ["created_at"]
-        verbose_name = "Отказ от получения рассылок пользователя"
-        verbose_name_plural = "Отказы от получения рассылок пользователей"
+        verbose_name = _('Opting out of receiving user mailings')
+        verbose_name_plural = _('Opting out of receiving user mailings')
 
     def __str__(self):
         return str(self.user_id)
+
+
+class Application(Create):
+
+    slug = models.SlugField(
+        verbose_name=_('slug'),
+        help_text=_('set slug'),
+        unique=True,
+    )
+    password = models.CharField(
+        max_length=128,
+        verbose_name=_('password'),
+        help_text=_('set password'),
+    )
+
+    def check_password(self, raw_password):
+        return make_password(raw_password, settings.SALT) == self.password
+
+    def save(self, *args, **kwargs):
+        self.password = make_password(self.password, settings.SALT)
+        super(Application, self).save(*args, **kwargs)
+
+    class Meta:
+        ordering = ["created_at"]
+        verbose_name = _('Application')
+        verbose_name_plural = _('Applications')
+
+    def __str__(self):
+        return str(self.slug)

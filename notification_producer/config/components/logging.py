@@ -38,6 +38,11 @@ if int(os.environ.get('LOGGING_ON', 1)) == 1:
                 'level': LOG_LEVEL,
                 'propagate': True,
             },
+            'logger': {
+                'handlers': ['debug-console'],
+                'level': LOG_LEVEL,
+                'propagate': True,
+            },
             '': {
                 'handlers': ['debug-console'],
                 'level': LOG_LEVEL,

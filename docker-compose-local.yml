@@ -1,22 +1,22 @@
 version: '3.8'
 
 services:
-  rabbitmq:
-    image: rabbitmq:3.11.13-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-    env_file:
-      - .env
-    volumes:
-      - ./rabbitmq_data/data:/var/lib/rabbitmq
-    networks:
-      - moves_network
-
+#  rabbitmq:
+#    image: rabbitmq:3.11.13-management
+#    container_name: rabbitmq
+#    ports:
+#      - "5672:5672"
+#      - "15672:15672"
+#    environment:
+#      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+#      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+#    env_file:
+#      - .env
+#    volumes:
+#      - ./rabbitmq_data/data:/var/lib/rabbitmq
+#    networks:
+#      - moves_network
+#
 #  db:
 #    image: postgres:12.4
 #    container_name: db
@@ -49,6 +49,19 @@ services:
 #      - db
 #    networks:
 #      - moves_network
+
+  mailtrap:
+    image: mailtrap/mailtrap
+    ports:
+      - '25:25'      # Порт SMTP
+      - '80:80'      # Порт веб-интерфейса
+      - '443:443'    # Порт HTTPS
+    environment:
+      - SMTP_PORT=25
+      - SMTP_SSL=false
+      - SMTP_USERNAME=null
+      - SMTP_PASSWORD=null
+      - SMTP_AUTH=true
 
 volumes:
   postgres_data:

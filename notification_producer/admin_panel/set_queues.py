@@ -4,10 +4,10 @@ import logging
 from aio_pika import connect
 from config import settings
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('logger')
 
 
-async def set_queues():
+async def set_queues() -> None:
     connection = await connect(
         "amqp://{user}:{password}@{host}/".format(
             user=settings.RABBITMQ_DEFAULT_USER,
