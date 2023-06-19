@@ -50,18 +50,10 @@ services:
 #    networks:
 #      - moves_network
 
-  mailtrap:
-    image: mailtrap/mailtrap
+  mailer:
+    image: mailhog/mailhog
     ports:
-      - '25:25'      # Порт SMTP
-      - '80:80'      # Порт веб-интерфейса
-      - '443:443'    # Порт HTTPS
-    environment:
-      - SMTP_PORT=25
-      - SMTP_SSL=false
-      - SMTP_USERNAME=null
-      - SMTP_PASSWORD=null
-      - SMTP_AUTH=true
+      - "8025:8025"
 
 volumes:
   postgres_data:

@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from django.contrib.auth.hashers import make_password
@@ -156,12 +155,13 @@ class UsersNotification(CreateUpdate):
                 self.is_user_unsubscribed = True
             from admin_panel.users_data_getter import UsersDataGetter
             data_getter = UsersDataGetter(
-                self.user_id,
+                [self.user_id],
                 Notification.TYPES_AND_FIELDS[self.notification.type]
             )
-            value = asyncio.run(
-                data_getter.get_user_data()
-            )
+            values = data_getter.get_data_for_users()
+            if values is None or not isinstance(values, dict):
+                return
+            value = values[str(self.user_id)]
             if value is not False and value is not None:
                 self.contact = value
             elif value is False:

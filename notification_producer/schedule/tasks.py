@@ -40,43 +40,48 @@ def save_missing_users_notifications_to_rabbitmq():
         )
         if users_notification.contact is None:
             data_getter = UsersDataGetter(
-                users_notification.user_id,
+                [users_notification.user_id],
                 Notification.TYPES_AND_FIELDS[
                     users_notification.notification.type
                 ]
             )
-            contact = asyncio.run(data_getter.get_user_data())
-            if contact is None:
+            contacts = data_getter.get_data_for_users()
+            if contacts is None or not isinstance(contacts, dict):
                 return
-            logger.info("contact: {contact}".format(contact=contact))
-            users_notification.contact = contact
-            users_notification.save()
-        try:
-            asyncio.run(
-                save_notification_to_rabbitmq(
-                    {
-                        'notification_id': users_notification.id,
-                        'content_id': str(
-                            users_notification.notification.content_id
-                        ),
-                        'is_express':
-                            users_notification.notification.is_express
-                    }
-                )
-            )
-        except Exception as error:
-            logger.error(
-                'Did not sent notification to rabbitmq: {error}'.format(
-                    error=error
-                )
-            )
-        else:
-            users_notification.is_sent_to_queue = True
-            super(UsersNotification, users_notification).save()
-            logger.info(
-                'Users_notification {users_notification} sent to '
-                'RabbitMQ'.format(
-                    users_notification=users_notification
-                )
-            )
+            contact = contacts[str(users_notification.user_id)]
+            if contact is False:
+                users_notification.is_correct_contacts = False
+                users_notification.save()
+                return
+            else:
+                logger.info("contact: {contact}".format(contact=contact))
+                users_notification.contact = contact
+                users_notification.save()
+                try:
+                    asyncio.run(
+                        save_notification_to_rabbitmq(
+                            {
+                                'notification_id': users_notification.id,
+                                'content_id': str(
+                                    users_notification.notification.content_id
+                                ),
+                                'is_express':
+                                    users_notification.notification.is_express
+                            }
+                        )
+                    )
+                except Exception as error:
+                    logger.error(
+                        'Did not sent notification to rabbitmq: '
+                        '{error}'.format(error=error)
+                    )
+                else:
+                    users_notification.is_sent_to_queue = True
+                    super(UsersNotification, users_notification).save()
+                    logger.info(
+                        'Users_notification {users_notification} sent to '
+                        'RabbitMQ'.format(
+                            users_notification=users_notification
+                        )
+                    )
     logger.info('Finished save_missing_notifications_to_rabbitmq')

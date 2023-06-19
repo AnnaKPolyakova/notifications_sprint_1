@@ -1,10 +1,10 @@
 import asyncio
 import datetime
 from typing import List
-
 from admin_panel.models import (
     Notification, NotificationFrequency, UsersNotification, UsersUnsubscribe
 )
+
 from admin_panel.producer import save_notification_to_rabbitmq
 from admin_panel.users_data_getter import UsersDataGetter
 from celery.utils.log import get_task_logger
@@ -18,6 +18,9 @@ class UsersNotificationsCreator:
         self.frequency: NotificationFrequency = frequency
         self.users_ids: List = []
         self.users_notifications = UsersNotification.objects.none()
+        self.users_data: dict = {}
+        self.users_who_subscribed: list = []
+        self.send_to_rabbitmq: bool = True
 
     def _get_users_ids(self):
         logger.info('Start _get_users_ids')
@@ -36,23 +39,48 @@ class UsersNotificationsCreator:
             'users_ids is {users_ids}'.format(users_ids=self.users_ids)
         )
 
+    def _get_users_who_subscribed(self):
+        users_who_unsubscribed = UsersUnsubscribe.objects.filter(
+            user_id__in=self.users_ids
+        ).values_list('user_id')
+        logger.info(
+            'Unsubscribed users: {users}'.format(users=users_who_unsubscribed)
+        )
+        result = []
+        for user_id in self.users_ids:
+            if user_id not in users_who_unsubscribed:
+                result.append(user_id)
+        self.users_who_subscribed = result
+        logger.info(
+            'Subscribed users: {users}'.format(users=self.users_who_subscribed)
+        )
+
+    def _get_users_data(self):
+        logger.info('Start get_user_contact')
+        data_getter = UsersDataGetter(
+            self.users_who_subscribed, self.notification.TYPES_AND_FIELDS[
+                self.notification.type
+            ]
+        )
+        self.users_data = data_getter.get_data_for_users()
+
     def _create_users_notifications(self):
         logger.info('Start _create_users_notifications')
         users_notifications = []
+        self._get_users_who_subscribed()
+        self._get_users_data()
+        if not isinstance(self.users_data, dict):
+            self.send_to_rabbitmq = False
         for user_id in self.users_ids:
             is_correct_contacts = True
             is_user_subscribed = True
-            if UsersUnsubscribe.objects.filter(user_id=user_id).exists():
+            if user_id not in self.users_who_subscribed:
                 is_user_subscribed = False
                 contact = ''
+            elif not isinstance(self.users_data, dict):
+                contact = None
             else:
-                data_getter = UsersDataGetter(
-                    user_id, self.notification.TYPES_AND_FIELDS[
-                        self.notification.type
-                    ]
-                )
-                logger.info('Start get_user_contact')
-                contact = asyncio.run(data_getter.get_user_data())
+                contact = self.users_data[user_id]
             logger.info('contact: {contact}'.format(contact=contact))
             if contact is False:
                 is_correct_contacts = False
@@ -81,11 +109,31 @@ class UsersNotificationsCreator:
             )
         )
         for user_notification in self.users_notifications:
+            logger.info('user_notification: {user_notification}'.format(
+                user_notification=user_notification
+            ))
             if (
-                    user_notification.is_user_subscribed is False or
-                    user_notification.is_correct_contacts
+                    user_notification.is_correct_contacts is False or
+                    user_notification.is_user_subscribed is False
             ):
+                logger.info(
+                    'User_notification does not saved to '
+                    'rabbitmq: {user_notification}'.format(
+                        user_notification=user_notification
+                    )
+                )
+                logger.info(
+                    'is_user_subscribed: {is_user_subscribed}'.format(
+                        is_user_subscribed=user_notification.is_user_subscribed
+                    )
+                )
+                logger.info(
+                    'is_correct_contacts: {value}'.format(
+                        value=user_notification.is_correct_contacts
+                    )
+                )
                 continue
+            logger.info('check contact')
             if user_notification.contact:
                 asyncio.run(
                     save_notification_to_rabbitmq(
@@ -107,5 +155,8 @@ class UsersNotificationsCreator:
         self._get_users_ids()
         self._create_users_notifications()
         logger.info('_save_notification_to_rabbitmq')
-        self._save_notification_to_rabbitmq()
-        logger.info('Finished create_and_send_users_notifications')
+        if self.send_to_rabbitmq:
+            self._save_notification_to_rabbitmq()
+            logger.info('Finished create_and_send_users_notifications')
+        else:
+            logger.info('Finished create_users_notifications only')
