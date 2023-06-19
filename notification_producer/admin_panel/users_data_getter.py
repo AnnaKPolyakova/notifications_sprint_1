@@ -1,7 +1,8 @@
+import asyncio
 import logging
 import uuid
 from http import HTTPStatus
-from typing import Union, List
+from typing import List, Optional
 
 import aiohttp
 from config import settings
@@ -25,56 +26,51 @@ class UsersDataGetter:
         "chat_id": _is_valid_chat_id,
     }
 
-    def __init__(self, user_id, field, users_ids=[]):
-        self.user_id: uuid.UUID = user_id
+    def __init__(self, users_ids, field):
         self.users_ids: List[uuid.UUID] = users_ids
         self.field: str = field
-        self.value: Union[str, None] = None
         self.data: dict = dict()
 
-    async def get_user_data(self):
+    async def _get_user_data(self, page_number) -> Optional[dict]:
+        last_id = page_number * settings.PAGE_SIZE_FOR_NUMBERS_INFO_HOST
+        first_id = last_id - settings.PAGE_SIZE_FOR_NUMBERS_INFO_HOST + 1
+        ids = self.users_ids[first_id - 1: last_id]
+        data_ids = [str(user_id) for user_id in ids]
         for _ in range(settings.NUMBER_OF_TRIES_TO_GET_USERS):
             async with aiohttp.ClientSession() as session:
-                async with session.get(
-                        settings.GET_USER_INFO_HOST.format(
-                            user_id=self.user_id
-                        )
+                async with session.post(
+                        settings.GET_USERS_INFO_HOST.format(
+                            page=page_number,
+                            field=self.field,
+                        ),
+                        json={"ids": data_ids}
                 ) as response:
                     if response.status != HTTPStatus.OK:
                         continue
-                    if response.status == HTTPStatus.NOT_FOUND:
-                        logger.info(
-                            "User {user_id} not exist".format(
-                                user_id=self.user_id
-                            )
-                        )
-                        break
                     data = await response.json()
-                    self.value = data.get(self.field, None)
-                    if self.value is None:
-                        return
-                    if self.VALUES_AND_CHECKS[self.field] is None:
-                        return self.value
-                    if self.VALUES_AND_CHECKS[self.field](self.value):
-                        return self.value
-                    return False
+                    for user_id in data_ids:
+                        if user_id not in data:
+                            data[user_id] = False
+                        if self.VALUES_AND_CHECKS[self.field] is not None:
+                            if self.VALUES_AND_CHECKS[self.field](
+                                data[user_id]
+                            ) is False:
+                                data[user_id] = False
+                    return data
+        return None
 
-    async def get_data_for_users(self):
-        for _ in range(settings.NUMBER_OF_TRIES_TO_GET_USERS):
-            payload = {
-                "users_ids": self.users_ids,
-                "field": self.field,
-            }
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                        settings.GET_USERS_INFO_HOST,
-                        json=payload
-                ) as response:
-                    if response.status != HTTPStatus.OK:
-                        continue
-                    data = await response.json()
-                    check = self.VALUES_AND_CHECKS[self.field]
-                    for user, value in data.items():
-                        if check(value):
-                            self.data[user] = value
-                    return self.data
+    def get_data_for_users(self) -> Optional[dict]:
+        users_ids_count = len(self.users_ids)
+        if users_ids_count == 0:
+            return self.data
+        requests_count = (
+                users_ids_count // settings.PAGE_SIZE_FOR_NUMBERS_INFO_HOST
+        )
+        if users_ids_count % settings.PAGE_SIZE_FOR_NUMBERS_INFO_HOST > 0:
+            requests_count += 1
+        for page_number in range(1, requests_count + 1):
+            part_data = asyncio.run(self._get_user_data(page_number))
+            if part_data is None:
+                return None
+            self.data.update(part_data)
+        return self.data

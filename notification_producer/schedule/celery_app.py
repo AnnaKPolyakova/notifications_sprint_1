@@ -48,7 +48,7 @@ def get_all_tasks() -> dict:
         },
     }
     tasks.update(get_regular_tasks())
-    time.sleep(20)
+    time.sleep(2)
     return tasks
 
 
