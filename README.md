@@ -1,77 +1,74 @@
-# Проектная работа 10 спринта
+# Project work 10 sprint
 
-Командная работа https://github.com/AnnaKPolyakova/notifications_sprint_1  
-Над проектом работали:  https://github.com/AnnaKPolyakova/ (Анна Полякова)
+## Description of the project:
+[DB schema](schemas%2Fnotification_models_schema.plantuml)
+[Project work scheme](schemas%2Fschema.plantuml)
 
-## Описание работы проекта:
-[Схема бд](schemas%2Fnotification_models_schema.plantuml)  
-[Схема работы проекта](schemas%2Fschema.plantuml)
+#### Creating notifications:
+You can create one-time notifications:
+- via API (documentation here http://127.0.0.1:8004/api/schema/redoc/).
+   You need to create a Notification and bind UsersNotification to it with
+   indicating the user id (to whom the notification should be sent). If notice
+   must be urgent, then is_express must be specified. Urgent
+   notifications go into a separate queue with a higher priority.
 
-#### Создание уведомлений:
-Создать разовые уведомление можно:
-- через API (документация тут http://127.0.0.1:8004/api/schema/redoc/). 
-  Необходимо создать Notification и привязать к нему UsersNotification с 
-  указанием id пользователей (кому направить уведомление). Если уведомление 
-  должно быть срочным, то необходимо указать is_express. Срочные 
-  уведомления попадают в отдельную очередь с более высоким приоритетом.
-
-  Что бы создать уведомление администратору можно использовать авторизацию 
-  через логин пароль или jwt токен.
+   To create a notification to the administrator, you can use authorization
+   via login password or jwt token.
   
-  Что бы создать уведомление через стороннее приложение администратор должен 
-  зарегистрировать его через админ панель и выдать ему логин и пароль, 
-  который необходимо указать в headers в формате 'Authorization': 'логин пароль'
+   To create a notification through a third-party application, the administrator must
+   register it through the admin panel and give it a login and password,
+   which must be specified in headers in the 'Authorization' format: 'login password'
 
-- админ панель (http://127.0.0.1:8004/admin/)
+- admin panel (http://127.0.0.1:8004/admin/)
 
-#### Формирование запроса пользователем через API:
-  Так как за авторизацию пользователей отвечает сторонний сервер, то 
-  необходимо в headers запроса добавить токен в формате 'Authorization': 'токен'
-
-
-Так же можно сформировать регулярное уведомление (NotificationFrequency)
-Необходимо указать: id пользователей в виде списка, ссылка на Notification и 
-периодичность.
-После перезагрузки celery - новая таска будет запускаться по расписанию
-
-После создания NotificationFrequency информация о нем попадает в очередь, 
-консьюмер достает их оттуда и отправляет сообщения.
-
-В случае, если что-то пойдет не так и при создании UsersNotification 
-информация о нем не попадет в очередь для обработки, то поле такого объекта 
-is_sent_to_queue будет помечено, как False. Специальная регулярная таска 
-будет отыскивать такие сообщение и пробовать поставить их в очередь снова и 
-снова.
-
-Кол-во коньсюмеров для запуска и их минимальное и максимальное кол-во 
-указывается в env. Перед запуском происходит проверка, уже имеющегося кол-ва 
-консьюмеров и вычисляется какое ко-во можно запустить.
-
-Если кол-во сообщений формируемых за раз больше 100, то последующшие 
-сообщения отправляются в очередь с задержкой
+#### Formation of a request by the user via the API:
+   Since a third-party server is responsible for user authorization,
+   you need to add a token in the 'Authorization' format to the request headers: 'token'
 
 
-#### Запуск проекта в контейнерах docker
+You can also generate a regular notification (NotificationFrequency)
+You must specify: user ids in the form of a list, a link to Notification and
+periodicity.
+After rebooting celery, the new task will be launched according to schedule
+
+After creating a NotificationFrequency, information about it goes into the queue,
+the consumer takes them out and sends messages.
+
+In case something goes wrong while creating UsersNotification
+information about it will not be queued for processing, then the field of such an object
+is_sent_to_queue will be marked as False. Special regular task
+will look for such messages and try to queue them again and
+again.
+
+Number of consumers to launch and their minimum and maximum number
+specified in env. Before starting, a check is made to check the existing quantity
+consumers and calculates how many can be launched.
+
+If the number of messages generated at a time is more than 100, then subsequent
+messages are sent to the queue with a delay
+
+
+#### Running a project in docker containers
 
 * `docker-compose up -d --build`
 * `docker-compose exec producer python notification_producer/manage.py createsuperuser`
 
-Для остановки контейнера:
+To stop the container:
 
 * `docker-compose down --rmi all --volumes`
 
 
-#### Запуск проекта частично в контейнерах docker
+#### Running the project partially in docker containers
 
 * `docker-compose -f docker-compose-local.yml up --build`
 * `cd notification_producer/`
 * `celery -A schedule.celery_app worker -l info`
 * `celery -A schedule.celery_app beat -l info`
 
-Для остановки контейнера:
+To stop the container:
 
 * `docker-compose -f docker-compose-local.yml down --rmi all --volumes`
 
 
-Для создания админа:
+To create an admin:
 * `python notification_producer/manage.py createsuperuser`
