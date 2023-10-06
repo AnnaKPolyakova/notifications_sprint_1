@@ -1,5 +1,5 @@
 # Project work 10 sprint
-
+ 
 ## Description of the project:
 [DB schema](schemas%2Fnotification_models_schema.plantuml)
 [Project work scheme](schemas%2Fschema.plantuml)
